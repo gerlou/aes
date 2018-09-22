@@ -47,10 +47,9 @@ InvSbox = [
     [0x17, 0x2B, 0x04, 0x7E, 0xBA, 0x77, 0xD6, 0x26, 0xE1, 0x69, 0x14, 0x63, 0x55, 0x21, 0x0C, 0x7D]
 ]
 
-rConTable = (
-    0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80, 0x1b, 0x36,
-    0x00, 0x00, 0x00, 0x00, )
+rConTable = [0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80, 0x1b, 0x36]
 
+roundKeys = []
 
 def pad(inputdata):
     padding = len(inputdata) % 16
@@ -65,29 +64,94 @@ def pad(inputdata):
 
     return inputdata
 
-#def getRoundKey(key):
+def getRoundKeys(key, keysize):
+    totalRounds = 14
+    if keysize == 128:
+        totalRounds = 10
 
+
+    roundKeys.append(getKey(key, 0))
+    for i in range(0,totalRounds - 1):
+        roundKeys.append(getKey(roundKeys[i], i + 1))
+
+def getKey(key, round):
+    newKey = [];
+    rotword = key[3][1:4];
+    rotword.extend(bytearray(key[3][0].to_bytes(1, "big")))
+
+    #loop through rotword and lookup each byte in Sbox
+    for i in range(0,4):
+        colIndex = rotword[i] & 0x0F
+        rowIndex = rotword[i] >> 4
+        rotword[i] = Sbox[rowIndex][colIndex]
+
+    #xor changed rotword with first column of key and rcon[round]
+    rcon = [rConTable[round], 0x00, 0x00, 0x00]
+
+    col = []
+    for j in range(0,4):
+        col.append(key[0][j] ^ rotword[j] ^ rcon[j])
+    newKey.append(col)
+
+    col = []
+    for h in range(0,4):
+        col.append(key[1][h] ^ newKey[0][h])
+    newKey.append(col)
+
+    col = []
+    for h in range(0,4):
+        col.append(key[2][h] ^ newKey[1][h])
+    newKey.append(col)
+
+    col = []
+    for h in range(0,4):
+        col.append(key[3][h] ^ newKey[2][h])
+    newKey.append(col)
+
+    return newKey
+
+def addRoundKey(state, round):
+    result = []
+    roundKey = roundKeys[round]
+    print(state)
+    print(roundKey)
+    for i in range(0, 4):
+        col = []
+        for j in range(0,4):
+            col.append(state[i][j] ^ roundKey[i][j])
+        result.append(col)
+    print(result)
+    return result
 
 def encrypt(inputdata, key, keysize):
     #pad input data
     paddedinput = pad(inputdata)
 
+    #parse original key into 2d array
+    parsedkey = []
+    for b in range(0, int(keysize / 32)):
+        parsedkey.append(key[b*4:b*4+4])
+
+    getRoundKeys(parsedkey, keysize)
+
     #print(inputdata.hex())
     #loop through 16 byte chunks in input
     for i in range(0, int(len(inputdata) / 16)):
         chunk = inputdata[16*i : 16* (i + 1)]
+        #parse the chunk into array of columns
         parsedchunk = []
         for a in range(0, 4):
             parsedchunk.append(chunk[a*4:a*4+4])
-        print(parsedchunk)
 
-"""
+        state = addRoundKey(parsedchunk, 0)
+
         if keysize == 128:
             #perform 10 rounds
             # final round is different
             for i in range(0, 9):
+                
 
-
+"""
         else if keysize == 256:
             #perform 14 rounds
             for j in range(0, 13):
@@ -96,8 +160,8 @@ def encrypt(inputdata, key, keysize):
 
 def main():
     # get variables from command line
-    keysize = sys.argv[2]
-    key = sys.argv[4]
+    keysize = int(sys.argv[2])
+    keyfilename = sys.argv[4]
     inputfilename = sys.argv[6]
     outputfilename = sys.argv[8]
     mode = sys.argv[10]
@@ -107,6 +171,9 @@ def main():
     inputdata = bytearray(inputfile.read())
     inputfile.close()
 
+    keyfile = open(keyfilename, "rb")
+    key = bytearray(keyfile.read())
+    keyfile.close()
     #perform encryption or decryption based on requested mode
     if mode == "encrypt":
         outputdata = encrypt(inputdata, key, keysize)
