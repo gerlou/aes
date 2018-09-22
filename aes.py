@@ -64,6 +64,7 @@ def pad(inputdata):
 
     return inputdata
 
+
 def getRoundKeys(key, keysize):
     totalRounds = 14
     if keysize == 128:
@@ -123,6 +124,26 @@ def addRoundKey(state, round):
     print(result)
     return result
 
+
+def getRoundKey(key):
+
+
+
+def mixColumns(statearray):
+    # each byte in column is replaced by 2*byte + 3*next byte + next byte + next byte during encryption
+    for i in range(0, 4):
+        for j in range(0, 4):
+            statearray[i][j] = 0x02 * statearray[i][j] ^ (0x03 * statearray[(i+1) % 4][j]) ^ [(i+2) % 2][j] ^ [(i+3) % 4][j]
+
+
+def mixColumnsInverse(statearray):
+    for i in range(0, 4):
+        for j in range(0, 4):
+            statearray[i][j] = 0x0E * statearray[i][j] ^ (0x0B * statearray[(i+1) % 4][j]) ^ (0x0D * statearray[(i+2)%4][j]) ^ (0x09 * statearray[(i+3)%4][j])
+
+#def getRoundKey(key):
+
+
 def encrypt(inputdata, key, keysize):
     #pad input data
     paddedinput = pad(inputdata)
@@ -149,7 +170,7 @@ def encrypt(inputdata, key, keysize):
             #perform 10 rounds
             # final round is different
             for i in range(0, 9):
-                
+
 
 """
         else if keysize == 256:
