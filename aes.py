@@ -106,9 +106,14 @@ def getKey(key, round, column, totalColumns):
         alteredKey.append(col)
         return alteredKey
 
-def addRoundKey(state, round):
+def addRoundKey(state, round, parsedkey):
     result = []
-    roundKey = roundKeys[round]
+    roundKey = []
+    print(parsedkey)
+    if round == -1:
+        roundKey = parsedkey
+    else:
+        roundKey = roundKeys[round]
 
     for i in range(0, 4):
         col = []
@@ -121,21 +126,34 @@ def mixColumns(statearray):
     # each byte in column is replaced by 2*byte + 3*next byte + next byte + next byte during encryption
     for i in range(0, 4):
         for j in range(0, 4):
-            statearray[i][j] = 0x02 * statearray[i][j] ^ (0x03 * statearray[(i+1) % 4][j]) ^ [(i+2) % 2][j] ^ [(i+3) % 4][j]
-
+            statearray[i][j] = 0x02 * statearray[i][j] ^ (0x03 * statearray[(i+1) % 4][j]) ^ statearray[(i+2) % 4][j] ^ statearray[(i+3) % 4][j]
+    return statearray
 
 def mixColumnsInverse(statearray):
     for i in range(0, 4):
         for j in range(0, 4):
             statearray[i][j] = 0x0E * statearray[i][j] ^ (0x0B * statearray[(i+1) % 4][j]) ^ (0x0D * statearray[(i+2)%4][j]) ^ (0x09 * statearray[(i+3)%4][j])
+    return statearray
 
 def subBytes(state):
     for i in range(0, 4):
-        for i in range(0, 4):
+        for j in range(0, 4):
             colIndex = state[i][j] & 0x0F
             rowIndex = state[i][j] >> 4
+            print(hex(colIndex))
+            print(hex(rowIndex))
             state[i][j] = Sbox[rowIndex][colIndex]
+    return state
 
+def shiftRows(state):
+    for i in range(1, 4):
+        for j in range(0, i):
+            temp = state[0][i]
+            state[0][i] = state [1][i]
+            state[1][i] = state [2][i]
+            state[2][i] = state [3][i]
+            state[3][i] = temp
+    return state
 
 def encrypt(inputdata, key, keysize):
     #pad input data
@@ -157,16 +175,23 @@ def encrypt(inputdata, key, keysize):
         for a in range(0, 4):
             parsedchunk.append(chunk[a*4:a*4+4])
 
-        state = addRoundKey(parsedchunk, 0)
+        state = addRoundKey(parsedchunk, -1, parsedkey)
 
         if keysize == 128:
             #perform 10 rounds
             # final round is different
             for i in range(0, 9):
-                subBytes(state)
-                shiftRows()
-                mixColumns()
-                addRoundKey(state, i + 1)
+                state = subBytes(state)
+                state = shiftRows(state)
+                state = mixColumns(state)
+                state = addRoundKey(state, i, parsedkey)
+
+            #final round
+            state = subBytes(state)
+            state = shiftRows(state)
+            state = addRoundKey(state, 9, parsedkey)
+
+            print(state)
 
 """
         else if keysize == 256:
