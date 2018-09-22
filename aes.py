@@ -126,7 +126,7 @@ def mixColumns(statearray):
     # each byte in column is replaced by 2*byte + 3*next byte + next byte + next byte during encryption
     for i in range(0, 4):
         for j in range(0, 4):
-            statearray[i][j] = 0x02 * statearray[i][j] ^ (0x03 * statearray[(i+1) % 4][j]) ^ statearray[(i+2) % 4][j] ^ statearray[(i+3) % 4][j]
+            statearray[j][i] = 0x02 * statearray[j][i] ^ (0x03 * statearray[j][(i+1) % 4]) ^ statearray[j][(i+2) % 4] ^ statearray[j][(i+3) % 4]
     return statearray
 
 def mixColumnsInverse(statearray):
@@ -138,6 +138,7 @@ def mixColumnsInverse(statearray):
 def subBytes(state):
     for i in range(0, 4):
         for j in range(0, 4):
+            print(hex(state[i][j]))
             colIndex = state[i][j] & 0x0F
             rowIndex = state[i][j] >> 4
             print(hex(colIndex))
@@ -176,15 +177,33 @@ def encrypt(inputdata, key, keysize):
             parsedchunk.append(chunk[a*4:a*4+4])
 
         state = addRoundKey(parsedchunk, -1, parsedkey)
-
+        print("state")
+        print(state)
         if keysize == 128:
             #perform 10 rounds
             # final round is different
             for i in range(0, 9):
                 state = subBytes(state)
+                print("state after subBytes")
+                for a in range(0,4):
+                    for b in range(0,4):
+                        print(hex(state[a][b]))
                 state = shiftRows(state)
+                print("state after shiftRows")
+                for a in range(0,4):
+                    for b in range(0,4):
+                        print(hex(state[a][b]))
                 state = mixColumns(state)
+                print("state after mixColumns")
+                for a in range(0,4):
+                    for b in range(0,4):
+                        print(hex(state[a][b]))
                 state = addRoundKey(state, i, parsedkey)
+                print("state after addRoundKey")
+                for a in range(0,4):
+                    for b in range(0,4):
+                        print(hex(state[a][b]))
+
 
             #final round
             state = subBytes(state)
