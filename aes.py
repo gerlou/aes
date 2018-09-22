@@ -129,6 +129,12 @@ def mixColumnsInverse(statearray):
         for j in range(0, 4):
             statearray[i][j] = 0x0E * statearray[i][j] ^ (0x0B * statearray[(i+1) % 4][j]) ^ (0x0D * statearray[(i+2)%4][j]) ^ (0x09 * statearray[(i+3)%4][j])
 
+def subBytes(state):
+    for i in range(0, 4):
+        for i in range(0, 4):
+            colIndex = state[i][j] & 0x0F
+            rowIndex = state[i][j] >> 4
+            state[i][j] = Sbox[rowIndex][colIndex]
 
 
 def encrypt(inputdata, key, keysize):
@@ -157,7 +163,7 @@ def encrypt(inputdata, key, keysize):
             #perform 10 rounds
             # final round is different
             for i in range(0, 9):
-                subBytes()
+                subBytes(state)
                 shiftRows()
                 mixColumns()
                 addRoundKey(state, i + 1)
