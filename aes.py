@@ -67,67 +67,55 @@ def pad(inputdata):
 
 def getRoundKeys(key, keysize):
     totalRounds = 14
+    totalColumns = 8
     if keysize == 128:
         totalRounds = 10
+        totalColumns = 4
 
 
-    roundKeys.append(getKey(key, 0))
+    roundKeys.append(getKey(key, 0, totalColumns - 1, totalColumns))
     for i in range(0,totalRounds - 1):
-        roundKeys.append(getKey(roundKeys[i], i + 1))
+        roundKeys.append(getKey(roundKeys[i], i + 1, totalColumns - 1, totalColumns))
 
-def getKey(key, round):
-    newKey = [];
-    rotword = key[3][1:4];
-    rotword.extend(bytearray(key[3][0].to_bytes(1, "big")))
+def getKey(key, round, column, totalColumns):
+    if column == 0:
+        newKey = [];
+        rotword = key[totalColumns-1][1:totalColumns];
+        rotword.extend(bytearray(key[totalColumns-1][0].to_bytes(1, "big")))
 
-    #loop through rotword and lookup each byte in Sbox
-    for i in range(0,4):
-        colIndex = rotword[i] & 0x0F
-        rowIndex = rotword[i] >> 4
-        rotword[i] = Sbox[rowIndex][colIndex]
+        #loop through rotword and lookup each byte in Sbox
+        for i in range(0,totalColumns):
+            colIndex = rotword[i] & 0x0F
+            rowIndex = rotword[i] >> 4
+            rotword[i] = Sbox[rowIndex][colIndex]
 
-    #xor changed rotword with first column of key and rcon[round]
-    rcon = [rConTable[round], 0x00, 0x00, 0x00]
+        #xor changed rotword with first column of key and rcon[round]
+        rcon = [rConTable[round], 0x00, 0x00, 0x00]
 
-    col = []
-    for j in range(0,4):
-        col.append(key[0][j] ^ rotword[j] ^ rcon[j])
-    newKey.append(col)
+        col = []
+        for j in range(0,totalColumns):
+            col.append(key[0][j] ^ rotword[j] ^ rcon[j])
+        newKey.append(col)
+        return newKey
 
-    col = []
-    for h in range(0,4):
-        col.append(key[1][h] ^ newKey[0][h])
-    newKey.append(col)
-
-    col = []
-    for h in range(0,4):
-        col.append(key[2][h] ^ newKey[1][h])
-    newKey.append(col)
-
-    col = []
-    for h in range(0,4):
-        col.append(key[3][h] ^ newKey[2][h])
-    newKey.append(col)
-
-    return newKey
+    else:
+        col = []
+        alteredKey= getKey(key, round, column - 1, totalColumns)
+        for h in range(0,totalColumns):
+            col.append(key[column][h] ^ alteredKey[column - 1][h])
+        alteredKey.append(col)
+        return alteredKey
 
 def addRoundKey(state, round):
     result = []
     roundKey = roundKeys[round]
-    print(state)
-    print(roundKey)
+
     for i in range(0, 4):
         col = []
         for j in range(0,4):
             col.append(state[i][j] ^ roundKey[i][j])
         result.append(col)
-    print(result)
     return result
-
-
-def getRoundKey(key):
-
-
 
 def mixColumns(statearray):
     # each byte in column is replaced by 2*byte + 3*next byte + next byte + next byte during encryption
@@ -141,7 +129,6 @@ def mixColumnsInverse(statearray):
         for j in range(0, 4):
             statearray[i][j] = 0x0E * statearray[i][j] ^ (0x0B * statearray[(i+1) % 4][j]) ^ (0x0D * statearray[(i+2)%4][j]) ^ (0x09 * statearray[(i+3)%4][j])
 
-#def getRoundKey(key):
 
 
 def encrypt(inputdata, key, keysize):
@@ -170,7 +157,10 @@ def encrypt(inputdata, key, keysize):
             #perform 10 rounds
             # final round is different
             for i in range(0, 9):
-
+                subBytes()
+                shiftRows()
+                mixColumns()
+                addRoundKey(state, i + 1)
 
 """
         else if keysize == 256:
