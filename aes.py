@@ -184,9 +184,11 @@ def mixColumns(statearray):
     # each byte in column is replaced by 2*byte + 3*next byte + next byte + next byte during encryption
     for i in range(0, 4):
         for j in range(0, 4):
-            colIndex = statearray[i][j] & 0x0F
-            rowIndex = statearray[i][j] >> 4
-            statearray[i][j] = mul2[rowIndex][colIndex] ^ mul3[rowIndex][colIndex] ^ statearray[(i+2) % 4][j] ^ statearray[(i+3) % 4][j]
+            colIndex = statearray[j][i] & 0x0F
+            rowIndex = statearray[j][i] >> 4
+            col2 = statearray[j][(i+1) % 4] & 0x0F
+            row2 = statearray[j][(i+1) % 4] >> 4
+            statearray[j][i] = mul2[rowIndex][colIndex] ^ mul3[row2][col2] ^ statearray[j][(i+2) % 4] ^ statearray[j][(i+3) % 4]
     #print("statearray after mixcols")
     #print(statearray)
 
