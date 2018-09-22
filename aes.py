@@ -62,53 +62,59 @@ def pad(inputdata):
         #append padding number of paddings to end of input data
         for i in range(0, padding):
             inputdata.append(padding)
-            
+
     return inputdata
 
-def getRoundKey(key):
-    
-    
+#def getRoundKey(key):
+
+
 def encrypt(inputdata, key, keysize):
     #pad input data
     paddedinput = pad(inputdata)
-    print(inputdata.hex())
-    #loop through 16 byte chunks in input 
+
+    #print(inputdata.hex())
+    #loop through 16 byte chunks in input
     for i in range(0, int(len(inputdata) / 16)):
         chunk = inputdata[16*i : 16* (i + 1)]
-        
+        parsedchunk = []
+        for a in range(0, 4):
+            parsedchunk.append(chunk[a*4:a*4+4])
+        print(parsedchunk)
+
+"""
         if keysize == 128:
-            #perform 10 rounds 
+            #perform 10 rounds
             # final round is different
             for i in range(0, 9):
-                
-        
+
+
         else if keysize == 256:
             #perform 14 rounds
             for j in range(0, 13):
-                
-        
-        
-def main():  
+"""
+
+
+def main():
     # get variables from command line
     keysize = sys.argv[2]
     key = sys.argv[4]
     inputfilename = sys.argv[6]
     outputfilename = sys.argv[8]
     mode = sys.argv[10]
-    
+
     #read data from input file into mutable byte array
     inputfile = open(inputfilename, "rb")
     inputdata = bytearray(inputfile.read())
     inputfile.close()
-    
+
     #perform encryption or decryption based on requested mode
     if mode == "encrypt":
         outputdata = encrypt(inputdata, key, keysize)
-    
+
     #outputfile = open(outputfilename, "wb")
     #outputfile.write(outputdata)
     #outputfile.close()
-        
+
 
 if __name__ == "__main__":
         main()
