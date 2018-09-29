@@ -3,11 +3,12 @@
 """
 Created on Wed Sep 19 21:53:19 2018
 
-@author: gerlou
+@author: gerlou and kyliesanderson
 """
 
 import sys
 import os
+import binascii
 
 Sbox = [
     [0x63, 0x7C, 0x77, 0x7B, 0xF2, 0x6B, 0x6F, 0xC5, 0x30, 0x01, 0x67, 0x2B, 0xFE, 0xD7, 0xAB, 0x76],
@@ -166,6 +167,8 @@ rConTable = [0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80, 0x1b, 0x36]
 
 roundKeys = []
 
+padding = 0
+
 #fix this using CMS padding technique
 # function that pads text input so that the input is divisible by 16
 # inputdata is binary representation of the input
@@ -181,6 +184,10 @@ def pad(inputdata):
             inputdata.append(padding)
 
     return inputdata
+
+def removePadding(outputdata):
+    truesize = 16 - padding
+    outputdata = outputdata[0:truesize]
 
 # function that creates all round keys and stores them in one global variable
 # key is 2d array, each entry in internal array is a byte
@@ -336,6 +343,8 @@ def encrypt(inputdata, key, keysize):
 
     #pre-emptively calculate all round keys
     getRoundKeys(parsedkey, keysize)
+    
+    result = bytearray()
 
     #loop through 16 byte chunks in input
     for i in range(0, int(len(inputdata) / 16)):
@@ -385,6 +394,22 @@ def encrypt(inputdata, key, keysize):
             state = shiftRows(state)
             state = addRoundKey(state, 9, parsedkey)
             
+        #print("final state")
+        for a in range(0,4):
+            for b in range(0,4):
+                result.append(state[a][b])
+                #print(hex(state[a][b]))
+                
+        #result.append(state)
+    #print("result is")
+    #for a in range(0, len(result)):
+       #print(hex(result[a]))
+        
+    #for a in range(0,4):
+        #for b in range(0,8):
+            #print(hex(result[a][b]))
+            
+        '''
         if keysize == 256:
             # 14 rounds
             for i in range(0, 13):
@@ -399,24 +424,13 @@ def encrypt(inputdata, key, keysize):
             state = addRoundKey(state, 13, parsedkey)
 
             #print(state)
-        print("final state")
-        for a in range(0,4):
-            for b in range(0,4):
-                print(hex(state[a][b]))
-
-'''
-for sub bytes, it’s exactly the same, only you look upon the inverse S box
-
-for shift rows, i think you just shift them the other way? like in the original you move the front but byte or 
-bytes from the row to the back of the row and shift. i think for decrypt you move those atthe back to the front.
-
-michael mentioned there’s also an extra two for encrypting 256 bytes, i made a note somewhere about it. 
-it’s like an extra if statement somewhere. he said we would find info on it on the internet.
-
-also, we were doing our CMS padding wrong, but i think i fixed it. you have to add the number of bytes you’re adding 
-that many times, even when it’s 16 bytes. like no 0s. you add 16 bytes of16s to pad that. 15 bytes of 15 to pad, etc.
-
-'''
+            '''
+            
+    print("result is")
+    for a in range(0, len(result)):
+       print(hex(result[a]))
+    return result
+        
 
 def decrypt(inputdata, key, keysize):
     '''
@@ -429,9 +443,139 @@ def decrypt(inputdata, key, keysize):
     
     intput -> decryption -> remove padding -> write to output
     '''
-    
-    if keysize == 128:
-        for i in range(0, 9):
+    #parse original key into 2d array
+    parsedkey = []
+    for b in range(0, int(keysize / 32)):
+        parsedkey.append(key[b*4:b*4+4])
+
+    #pre-emptively calculate all round keys
+    getRoundKeys(parsedkey, keysize)
+
+    #loop through 16 byte chunks in input
+    for i in range(0, int(len(inputdata) / 16)):
+        chunk = inputdata[16*i : 16* (i + 1)]
+
+        #parse the chunk into array of columns
+        parsedchunk = []
+        for a in range(0, 4):
+            parsedchunk.append(chunk[a*4:a*4+4])
+            
+            
+            
+        # do everything in reverse
+            
+        state = addRoundKey(state, 9, parsedkey)
+        state = inverseShiftRows(state)
+        state = inverseSubBytes(state)
+
+
+        #add round key to original key before entering rounds
+        #state = addRoundKey(parsedchunk, -1, parsedkey)
+        #print("state after addRoundKey")
+        #for a in range(0,4):
+        #    for b in range(0,4):
+        #        print(hex(state[a][b]))
+        
+        if keysize == 128:
+            for i in range(9, 0, -1):
+                #print("round")
+                #print(i + 1)
+                state = addRoundKey(state)
+                state = mixColumnsInverse(state)
+                state = inverseShiftRows(state)
+                state = inverseSubBytes(state)
+
+                #print("state after subBytes")
+                #for a in range(0,4):
+                #    for b in range(0,4):
+                #        print(hex(state[a][b]))
+                
+                #state = inverseSubBytes(state)
+                
+                #print("state after shiftRows")
+                #for a in range(0,4):
+                #    for b in range(0,4):
+                #        print(hex(state[a][b]))
+                
+                #state = addRoundKey(state)
+                
+                #print("state after mixColumns")
+                #for a in range(0,4):
+                #    for b in range(0,4):
+                #        print(hex(state[a][b]))
+                
+                #state = mixColumnsInverse(state)
+                
+                #print("state after addRoundKey")
+                #for a in range(0,4):
+                #    for b in range(0,4):
+                #        print(hex(state[a][b])) 
+
+
+            #final round: different, no mixColumns
+            state = addRoundKey(parsedchunk, -1, parsedkey)
+
+            #state = subBytes(state)
+            #state = shiftRows(state)
+            #state = addRoundKey(state, 9, parsedkey)
+            
+        # remove padding
+        state = removePadding(state)
+                    
+        print("final state")
+        for a in range(0,4):
+            for b in range(0,4):
+                print(hex(state[a][b]))
+
+'''
+        if keysize == 128:
+            #perform 10 rounds
+            for i in range(0, 9):
+                #print("round")
+                #print(i + 1)
+                state = inverseShiftRows(state)
+                #print("state after subBytes")
+                #for a in range(0,4):
+                #    for b in range(0,4):
+                #        print(hex(state[a][b]))
+                state = inverseSubBytes(state)
+                #print("state after shiftRows")
+                #for a in range(0,4):
+                #    for b in range(0,4):
+                #        print(hex(state[a][b]))
+                state = addRoundKey(state)
+                #print("state after mixColumns")
+                #for a in range(0,4):
+                #    for b in range(0,4):
+                #        print(hex(state[a][b]))
+                state = mixColumnsInverse(state)
+                #print("state after addRoundKey")
+                #for a in range(0,4):
+                #    for b in range(0,4):
+                #        print(hex(state[a][b]))
+
+
+            #final round: different, no mixColumns
+            state = subBytes(state)
+            state = shiftRows(state)
+            state = addRoundKey(state, 9, parsedkey)
+            
+        
+        if keysize == 256:
+            # 14 rounds
+            for i in range(0, 13):
+                state = subBytes(state)
+                state = shiftRows(state)
+                state = mixColumns(state)
+                state = addRoundKey(state, i, parsedkey)
+                
+            # final round
+            state = subBytes(state)
+            state = shiftRows(state)
+            state = addRoundKey(state, 13, parsedkey)
+
+            #print(state)
+            '''
             
     
     
@@ -449,26 +593,43 @@ def main():
     inputdata = bytearray(inputfile.read())
     inputfile.close()
 
+    print("inputdata")
     print(inputdata.hex())
+    print("len of inputdata")
+    print(len(inputdata))
 
     keyfile = open(keyfilename, "rb")
     key = bytearray(keyfile.read())
     keyfile.close()
 
+    print("key")
     print(key.hex())
 
     outputdata = inputdata
     #perform encryption or decryption based on requested mode
     if mode == "encrypt":
-        outputdata = encrypt(inputdata, key, keysize)        
+        outputdata = encrypt(inputdata, key, keysize)  
+        outputdata = outputdata[0:16] # take first 16 bytes
+
+        #print("length of output")
+        #print("outputdata")
+        #for a in range(0, len(outputdata)):
+            #print(hex(outputdata[a]))
+        #outputdata = outputdata[0:16] # take first 16 bytes
+        
+        #print(outputdata.hex())
         
     # assuming encrypt is called first, then outputdata passed in will be from encrypt
     if mode == "decrypt":
         outputdata = decrypt(outputdata, key, keysize)
         
+        print(outputdata.hex())
+        
     
     # write to output file
-    f = open(outputfilename)
+    f = open(outputfilename, 'wb')
+    #for a in range(0, len(outputdata)):
+        #f.write(outputdata[a])
     f.write(outputdata)
     f.close()
 
