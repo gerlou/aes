@@ -265,7 +265,6 @@ def mixColumns(statearray):
     # each byte in column is replaced by 2*byte + 3*next byte + next byte + next byte during encryption
     initialState = [[i for i in row] for row in statearray]
 
-    #print("debugging")
     for i in range(0, 4):
         for j in range(0, 4):
             statearray[i][j] = mul2[initialState[i][j]] ^ mul3[initialState[i][(j+1) % 4]] ^ initialState[i][(j+2) % 4] ^ initialState[i][(j+3) % 4]
@@ -295,6 +294,14 @@ def subBytes(state):
             state[i][j] = Sbox[rowIndex][colIndex]
     return state
 
+def inverseSubBytes(state):
+    for i in range(0, 4):
+        for j in range(0, 4):
+            colIndex = state[i][j] & 0x0F
+            rowIndex = state[i][j] >> 4
+            state[i][j] = InvSbox[rowIndex][colIndex]
+    return state
+
 def shiftRows(state):
     for i in range(1, 4):
         for j in range(0, i):
@@ -305,6 +312,19 @@ def shiftRows(state):
             state[3][i] = temp
     return state
 
+# shifting rows to the right
+def inverseShiftRows(state):
+    for i in range(1, 4):
+        for j in range(0, i):
+            temp = state[0][i]
+            state[0][i] = state[3][i]
+            state[1][i] = temp
+            state[2][i] = state[1][i]
+            state[3][i] = state[2][i]
+    return state
+    
+    
+    
 def encrypt(inputdata, key, keysize):
     #pad input data
     paddedinput = pad(inputdata)
@@ -364,6 +384,19 @@ def encrypt(inputdata, key, keysize):
             state = subBytes(state)
             state = shiftRows(state)
             state = addRoundKey(state, 9, parsedkey)
+            
+        if keysize == 256:
+            # 14 rounds
+            for i in range(0, 13):
+                state = subBytes(state)
+                state = shiftRows(state)
+                state = mixColumns(state)
+                state = addRoundKey(state, i, parsedkey)
+                
+            # final round
+            state = subBytes(state)
+            state = shiftRows(state)
+            state = addRoundKey(state, 13, parsedkey)
 
             #print(state)
         print("final state")
@@ -371,13 +404,38 @@ def encrypt(inputdata, key, keysize):
             for b in range(0,4):
                 print(hex(state[a][b]))
 
-"""
-        else if keysize == 256:
-            #perform 14 rounds
-            for j in range(0, 13):
-"""
+'''
+for sub bytes, it’s exactly the same, only you look upon the inverse S box
 
+for shift rows, i think you just shift them the other way? like in the original you move the front but byte or 
+bytes from the row to the back of the row and shift. i think for decrypt you move those atthe back to the front.
 
+michael mentioned there’s also an extra two for encrypting 256 bytes, i made a note somewhere about it. 
+it’s like an extra if statement somewhere. he said we would find info on it on the internet.
+
+also, we were doing our CMS padding wrong, but i think i fixed it. you have to add the number of bytes you’re adding 
+that many times, even when it’s 16 bytes. like no 0s. you add 16 bytes of16s to pad that. 15 bytes of 15 to pad, etc.
+
+'''
+
+def decrypt(inputdata, key, keysize):
+    '''
+    inverse shift rows
+    inverse substitution bytes
+    add round key
+    inverse mix columns
+    
+    last step doesn't inverse mix columns
+    
+    intput -> decryption -> remove padding -> write to output
+    '''
+    
+    if keysize == 128:
+        for i in range(0, 9):
+            
+    
+    
+    
 def main():
     # get variables from command line
     keysize = int(sys.argv[2])
@@ -399,9 +457,20 @@ def main():
 
     print(key.hex())
 
+    outputdata = inputdata
     #perform encryption or decryption based on requested mode
     if mode == "encrypt":
-        outputdata = encrypt(inputdata, key, keysize)
+        outputdata = encrypt(inputdata, key, keysize)        
+        
+    # assuming encrypt is called first, then outputdata passed in will be from encrypt
+    if mode == "decrypt":
+        outputdata = decrypt(outputdata, key, keysize)
+        
+    
+    # write to output file
+    f = open(outputfilename)
+    f.write(outputdata)
+    f.close()
 
     #outputfile = open(outputfilename, "wb")
     #outputfile.write(outputdata)
