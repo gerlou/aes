@@ -225,6 +225,11 @@ def getKey(key, round, column, totalColumns):
         rotword = key[totalColumns-1][1:totalColumns];
         rotword.extend(bytearray(key[totalColumns-1][0].to_bytes(1, "big")))
 
+    # first column, rotate last byte to the top
+    # lookup inv s box
+    
+    
+    
         #loop through rotword, lookup each byte in Sbox, and replace value
         for i in range(0,totalColumns):
             colIndex = rotword[i] & 0x0F
@@ -441,8 +446,12 @@ def decrypt(inputdata, key, keysize):
     
     last step doesn't inverse mix columns
     
-    intput -> decryption -> remove padding -> write to output
+    input -> decryption -> remove padding -> write to output
     '''
+    
+    print("inside decrypt")
+    print("len inputdata")
+    print(len(inputdata))
     #parse original key into 2d array
     parsedkey = []
     for b in range(0, int(keysize / 32)):
@@ -450,6 +459,9 @@ def decrypt(inputdata, key, keysize):
 
     #pre-emptively calculate all round keys
     getRoundKeys(parsedkey, keysize)
+    
+    result = bytearray()
+
 
     #loop through 16 byte chunks in input
     for i in range(0, int(len(inputdata) / 16)):
@@ -461,12 +473,15 @@ def decrypt(inputdata, key, keysize):
             parsedchunk.append(chunk[a*4:a*4+4])
             
             
+        #print("parsedchunk")
+        #for a in range(0, 4):
+            #print(parsedchunk[a])
             
         # do everything in reverse
             
-        state = addRoundKey(state, 9, parsedkey)
-        state = inverseShiftRows(state)
-        state = inverseSubBytes(state)
+        state = addRoundKey(parsedchunk, 9, parsedkey)
+        #state = inverseShiftRows(state)
+        #state = inverseSubBytes(state)
 
 
         #add round key to original key before entering rounds
@@ -480,11 +495,13 @@ def decrypt(inputdata, key, keysize):
             for i in range(9, 0, -1):
                 #print("round")
                 #print(i + 1)
-                state = addRoundKey(state)
-                state = mixColumnsInverse(state)
                 state = inverseShiftRows(state)
                 state = inverseSubBytes(state)
+                state = addRoundKey(state, i, parsedkey)
+                state = mixColumnsInverse(state)
 
+
+                #print(hex(state[a][b]))
                 #print("state after subBytes")
                 #for a in range(0,4):
                 #    for b in range(0,4):
@@ -513,7 +530,15 @@ def decrypt(inputdata, key, keysize):
 
 
             #final round: different, no mixColumns
-            state = addRoundKey(parsedchunk, -1, parsedkey)
+            state = inverseShiftRows(state)
+            state = inverseSubBytes(state)
+            state = addRoundKey(state, -1, parsedkey)
+            
+            print("finished a round")
+            for a in range(0,4):
+                for b in range(0,4):
+                    result.append(state[a][b])
+                    print(hex(state[a][b]))
 
             #state = subBytes(state)
             #state = shiftRows(state)
@@ -523,9 +548,9 @@ def decrypt(inputdata, key, keysize):
         state = removePadding(state)
                     
         print("final state")
-        for a in range(0,4):
-            for b in range(0,4):
-                print(hex(state[a][b]))
+        #for a in range(0,4):
+            #for b in range(0,4):
+                #print(hex(state[a][b]))
 
 '''
         if keysize == 128:
@@ -609,7 +634,7 @@ def main():
     #perform encryption or decryption based on requested mode
     if mode == "encrypt":
         outputdata = encrypt(inputdata, key, keysize)  
-        outputdata = outputdata[0:16] # take first 16 bytes
+        #outputdata = outputdata[0:16] # take first 16 bytes
 
         #print("length of output")
         #print("outputdata")
@@ -617,20 +642,19 @@ def main():
             #print(hex(outputdata[a]))
         #outputdata = outputdata[0:16] # take first 16 bytes
         
-        #print(outputdata.hex())
         
     # assuming encrypt is called first, then outputdata passed in will be from encrypt
     if mode == "decrypt":
         outputdata = decrypt(outputdata, key, keysize)
         
-        print(outputdata.hex())
+        #print(outputdata.hex())
         
     
     # write to output file
     f = open(outputfilename, 'wb')
     #for a in range(0, len(outputdata)):
         #f.write(outputdata[a])
-    f.write(outputdata)
+    f.write(outputdata[0:16])
     f.close()
 
     #outputfile = open(outputfilename, "wb")
