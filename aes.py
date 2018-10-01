@@ -340,12 +340,16 @@ def getKey(key, round, column, totalColumns):
         col = []
         # recursive case setting alteredKey equal to the returned value
         alteredKey = getKey(key, round, column - 1, totalColumns)
+        sub = []
         if column == 4:
-            sub = key[column]
+            for m in range(0, 4):
+                sub.append(key[column][m])
             for k in range(0, 4):
                 colIndex = sub[k] & 0x0F
                 rowIndex = sub[k] >> 4
                 sub[k] = Sbox[rowIndex][colIndex]
+            for l in range(0, 4):
+                key[column][l] = sub[l]
 
         for h in range(0, 4):
             col.append(key[column][h] ^ alteredKey[column - 1][h])
