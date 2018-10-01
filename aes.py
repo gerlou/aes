@@ -8,7 +8,7 @@ Created on Wed Sep 19 21:53:19 2018
 
 import sys
 import os
-import binascii
+
 
 Sbox = [
     [0x63, 0x7C, 0x77, 0x7B, 0xF2, 0x6B, 0x6F, 0xC5, 0x30, 0x01, 0x67, 0x2B,
@@ -237,45 +237,49 @@ roundKeys = []
 
 padding = 0
 
-#fix this using CMS padding technique
+
+# fix this using CMS padding technique
 # function that pads text input so that the input is divisible by 16
 # inputdata is binary representation of the input
 def pad(inputdata):
     padding = len(inputdata) % 16
     if padding == 0:
-        #append 16 bytes if 0s to end of input data
+        # append 16 bytes if 0s to end of input data
         for i in range(0, 16):
             inputdata.append(16)
     else:
-        #append padding number of paddings to end of input data
+        # append padding number of paddings to end of input data
         for i in range(0, padding):
             inputdata.append(padding)
 
     return inputdata
+
 
 # remove padding
 def removePadding(outputdata):
     truesize = 16 - padding
     outputdata = outputdata[0:truesize]
 
+
 # function that creates all round keys and stores them in one global variable
 # key is 2d array, each entry in internal array is a byte
 # keysize is either 256 or 128
 def getRoundKeys(key, keysize):
-    #alter number of rounds and columns according to key size
+    # alter number of rounds and columns according to key size
     totalRounds = 14
     totalColumns = 8
     if keysize == 128:
         totalRounds = 10
         totalColumns = 4
-        
 
-    #append first round key based on initial key
+    # append first round key based on initial key
     roundKeys.append(getKey(key, 0, totalColumns - 1, totalColumns))
-    #append the following round keys, each based off the key preceding
-    for i in range(0,totalRounds - 1):
-        roundKeys.append(getKey(roundKeys[i], i + 1, totalColumns - 1, totalColumns))
+    # append the following round keys, each based off the key preceding
+    for i in range(0, totalRounds - 1):
+        roundKeys.append(
+                getKey(roundKeys[i], i + 1, totalColumns - 1, totalColumns))
     return roundKeys
+
 
 def inverseRoundKeys(roundKeys):
     reversed = []
@@ -284,39 +288,41 @@ def inverseRoundKeys(roundKeys):
     roundKeys = reversed
     return roundKeys
 
-# recursive function that returns entire round key,adding one new column per call
+
+# recursive function that returns entire round key,adding one new column
+# per call
 # key is the previous round key, from which the new round key will be derived
 # round is the round for which this key is for
 # column is the column that is being appended on each call
 # totalColumns is the total number of columns in the key (4 for 128, 8 for 256)
 
-#****************EXTRA STEP FOR 256 BIT KEY, EXTRA SUBBYTES*********************
+# ****************EXTRA STEP FOR 256 BIT KEY, EXTRA SUBBYTES*******************
 
 def getKey(key, round, column, totalColumns):
     # base case, appending the first column of the key
     if column == 0:
-        newKey = [];
+        newKey = []
 
         # get the last column of the previous key, and rotate the first byte
         # to the last position
         rotword = key[totalColumns-1][1:totalColumns]
         rotword.extend(bytearray(key[totalColumns-1][0].to_bytes(1, "big")))
 
-        #loop through rotword, lookup each byte in Sbox, and replace value
-        for i in range(0,totalColumns):
+        # loop through rotword, lookup each byte in Sbox, and replace value
+        for i in range(0, totalColumns):
             print("value of i is")
             print(i)
             colIndex = rotword[i] & 0x0F
             rowIndex = rotword[i] >> 4
             rotword[i] = Sbox[rowIndex][colIndex]
 
-        #xor changed rotword with first column of previous key and rcon[round]
+        # xor changed rotword with first column of previous key and rcon[round]
         rcon = [rConTable[round], 0x00, 0x00, 0x00]
         col = []
         for j in range(0,totalColumns):
             col.append(key[0][j] ^ rotword[j] ^ rcon[j])
 
-        #add column to new key and return
+        # add column to new key and return
         newKey.append(col)
         return newKey
     
