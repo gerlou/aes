@@ -200,6 +200,7 @@ def getRoundKeys(key, keysize):
     if keysize == 128:
         totalRounds = 10
         totalColumns = 4
+        
 
     #append first round key based on initial key
     roundKeys.append(getKey(key, 0, totalColumns - 1, totalColumns))
@@ -230,11 +231,13 @@ def getKey(key, round, column, totalColumns):
 
         # get the last column of the previous key, and rotate the first byte
         # to the last position
-        rotword = key[totalColumns-1][1:totalColumns];
+        rotword = key[totalColumns-1][1:totalColumns]
         rotword.extend(bytearray(key[totalColumns-1][0].to_bytes(1, "big")))
 
         #loop through rotword, lookup each byte in Sbox, and replace value
         for i in range(0,totalColumns):
+            print("value of i is")
+            print(i)
             colIndex = rotword[i] & 0x0F
             rowIndex = rotword[i] >> 4
             rotword[i] = Sbox[rowIndex][colIndex]
@@ -248,7 +251,11 @@ def getKey(key, round, column, totalColumns):
         #add column to new key and return
         newKey.append(col)
         return newKey
-
+    
+    elif column > 8 and column % 4 == 0:
+        colIndex = rotword[column] & 0x0F
+        rowIndex = rotword[column] >> 4
+        rotword[column] = Sbox[rowIndex][colIndex]
     # recursive case
     else:
         col = []
@@ -414,7 +421,7 @@ def encrypt(inputdata, key, keysize):
         #for b in range(0,8):
             #print(hex(result[a][b]))
 
-        '''
+        
         if keysize == 256:
             # 14 rounds
             for i in range(0, 13):
@@ -429,7 +436,9 @@ def encrypt(inputdata, key, keysize):
             state = addRoundKey(state, 13, parsedkey)
 
             #print(state)
-            '''
+        for a in range(0,4):
+            for b in range(0,8):
+                result.append(state[a][b])     
 
     #print("result is")
     #for a in range(0, len(result)):
@@ -509,7 +518,10 @@ def main():
     #perform encryption or decryption based on requested mode
     if mode == "encrypt":
         outputdata = encrypt(inputdata, key, keysize)
-        outputdata = outputdata[0:16] # take first 16 bytes
+        if keysize == 128:
+            outputdata = outputdata[0:16] # take first 16 bytes
+        if keysize == 256:
+            outputdata = outputdata[0:32] # first 32 bytes
 
         #print("length of output")
         #print("outputdata")
@@ -525,7 +537,7 @@ def main():
 
     # write to output file
     f = open(outputfilename, 'wb')
-    f.write(outputdata[0:16])
+    f.write(outputdata)
     f.close()
 
 
