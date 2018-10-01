@@ -1,4 +1,4 @@
-# aes
+# AES-128 and AES-256
 
 Encryption 128-bit key:
 
