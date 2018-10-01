@@ -233,6 +233,7 @@ mul14 = [
 
 rConTable = [0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80, 0x1b, 0x36]
 
+
 roundKeys = []
 
 padding = 0
@@ -266,7 +267,7 @@ def removePadding(outputdata):
 # keysize is either 256 or 128
 def getRoundKeys(key, keysize):
     # alter number of rounds and columns according to key size
-    totalRounds = 14
+    totalRounds = 7
     totalColumns = 8
     if keysize == 128:
         totalRounds = 10
@@ -322,7 +323,7 @@ def getKey(key, round, column, totalColumns):
 
         # xor changed rotword with first column of previous key and rcon[round]
         if totalColumns == 8:
-            rcon = [rConTable[int(round/2)], 0x00, 0x00, 0x00]
+            rcon = [rConTable[round], 0x00, 0x00, 0x00]
 
         else:
             rcon = [rConTable[round], 0x00, 0x00, 0x00]
