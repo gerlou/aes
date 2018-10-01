@@ -345,27 +345,21 @@ def getKey(key, round, column, totalColumns):
 
         return newKey
 
-    if column == 4:
-        print("START COLUMN 4")
-        alteredKey = getKey(key, round, column - 1, totalColumns)
-        diffCol = []
-        for x in range(0, 4):
-            colIndex = key[column][x] & 0x0F
-            rowIndex = key[column][x] >> 4
-            key[column][x] = Sbox[rowIndex][colIndex]
-            print(hex(key[column][x]))
-        for y in range(0, 4):
-            diffCol.append(key[column][y] ^ alteredKey[column - 1][y])
-        alteredKey.append(diffCol)
-        return alteredKey
     # recursive case
     else:
         col = []
         # recursive case setting alteredKey equal to the returned value
         alteredKey = getKey(key, round, column - 1, totalColumns)
 
+        if column == 4:
+            for z in range(0,4):
+                colIndex = alteredKey[column - 1][z] & 0x0F
+                rowIndex = alteredKey[column - 1][z] >> 4
+                alteredKey[column - 1][z] = Sbox[rowIndex][colIndex]
+
         for h in range(0, 4):
             col.append(key[column][h] ^ alteredKey[column - 1][h])
+
         alteredKey.append(col)
         return alteredKey
 
