@@ -274,10 +274,20 @@ def getRoundKeys(key, keysize):
 
     # append first round key based on initial key
     roundKeys.append(getKey(key, 0, totalColumns - 1, totalColumns))
+    print("round")
+    print("0")
+    for a in range(0, 8):
+        for b in range(0, 4):
+            print(hex(roundKeys[0][a][b]))
     # append the following round keys, each based off the key preceding
     for i in range(0, totalRounds - 1):
         roundKeys.append(
                 getKey(roundKeys[i], i + 1, totalColumns - 1, totalColumns))
+        print("round")
+        print(i + 1)
+        for a in range(0, 8):
+            for b in range(0, 4):
+                print(hex(roundKeys[i + 1][a][b]))
     return roundKeys
 
 
@@ -335,21 +345,24 @@ def getKey(key, round, column, totalColumns):
 
         return newKey
 
+    if column == 4:
+        print("START COLUMN 4")
+        alteredKey = getKey(key, round, column - 1, totalColumns)
+        diffCol = []
+        for x in range(0, 4):
+            colIndex = key[column][x] & 0x0F
+            rowIndex = key[column][x] >> 4
+            key[column][x] = Sbox[rowIndex][colIndex]
+            print(hex(key[column][x]))
+        for y in range(0, 4):
+            diffCol.append(key[column][y] ^ alteredKey[column - 1][y])
+        alteredKey.append(diffCol)
+        return alteredKey
     # recursive case
     else:
         col = []
         # recursive case setting alteredKey equal to the returned value
         alteredKey = getKey(key, round, column - 1, totalColumns)
-        sub = []
-        if column == 4:
-            for m in range(0, 4):
-                sub.append(key[column][m])
-            for k in range(0, 4):
-                colIndex = sub[k] & 0x0F
-                rowIndex = sub[k] >> 4
-                sub[k] = Sbox[rowIndex][colIndex]
-            for l in range(0, 4):
-                key[column][l] = sub[l]
 
         for h in range(0, 4):
             col.append(key[column][h] ^ alteredKey[column - 1][h])
