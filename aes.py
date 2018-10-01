@@ -498,7 +498,7 @@ def encrypt(inputdata, key, keysize):
 
             # print(state)
             for a in range(0, 4):
-                for b in range(0, 8):
+                for b in range(0, 4):
                     result.append(state[a][b])
 
     return result
