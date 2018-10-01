@@ -274,20 +274,11 @@ def getRoundKeys(key, keysize):
 
     # append first round key based on initial key
     roundKeys.append(getKey(key, 0, totalColumns - 1, totalColumns))
-    print("round")
-    print("0")
-    for a in range(0, 8):
-        for b in range(0, 4):
-            print(hex(roundKeys[0][a][b]))
     # append the following round keys, each based off the key preceding
     for i in range(0, totalRounds - 1):
         roundKeys.append(
                 getKey(roundKeys[i], i + 1, totalColumns - 1, totalColumns))
-        print("round")
-        print(i + 1)
-        for a in range(0, 8):
-            for b in range(0, 4):
-                print(hex(roundKeys[i + 1][a][b]))
+
     return roundKeys
 
 
@@ -337,8 +328,13 @@ def getKey(key, round, column, totalColumns):
             rcon = [rConTable[round], 0x00, 0x00, 0x00]
 
         col = []
+        print("round")
+        print(round)
+        print("column")
+        print(column)
         for j in range(0, 4):
             col.append(key[0][j] ^ rotword[j] ^ rcon[j])
+            print(hex(key[0][j] ^ rotword[j] ^ rcon[j]))
 
         # add column to new key and return
         newKey.append(col)
@@ -357,8 +353,13 @@ def getKey(key, round, column, totalColumns):
                 rowIndex = alteredKey[column - 1][z] >> 4
                 alteredKey[column - 1][z] = Sbox[rowIndex][colIndex]
 
+        print("round")
+        print(round)
+        print("column")
+        print(column)
         for h in range(0, 4):
             col.append(key[column][h] ^ alteredKey[column - 1][h])
+            print(hex(key[column][h] ^ alteredKey[column - 1][h]))
 
         alteredKey.append(col)
         return alteredKey
