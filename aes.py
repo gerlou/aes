@@ -201,11 +201,14 @@ def getRoundKeys(key, keysize):
         totalRounds = 10
         totalColumns = 4
 
+
     #append first round key based on initial key
     roundKeys.append(getKey(key, 0, totalColumns - 1, totalColumns))
+
     #append the following round keys, each based off the key preceding
     for i in range(0,totalRounds - 1):
         roundKeys.append(getKey(roundKeys[i], i + 1, totalColumns - 1, totalColumns))
+
     return roundKeys
 
 def inverseRoundKeys(roundKeys):
@@ -232,29 +235,52 @@ def getKey(key, round, column, totalColumns):
         # to the last position
         rotword = key[totalColumns-1][1:totalColumns];
         rotword.extend(bytearray(key[totalColumns-1][0].to_bytes(1, "big")))
+        print("after rotword")
+        for i in range(0, 4):
+            print(hex(rotword[i]))
 
         #loop through rotword, lookup each byte in Sbox, and replace value
-        for i in range(0,totalColumns):
+        print("after subword")
+        for i in range(0,4):
             colIndex = rotword[i] & 0x0F
             rowIndex = rotword[i] >> 4
             rotword[i] = Sbox[rowIndex][colIndex]
+            print(hex(rotword[i]))
 
         #xor changed rotword with first column of previous key and rcon[round]
-        rcon = [rConTable[round], 0x00, 0x00, 0x00]
+        if totalColumns == 8:
+            rcon = [rConTable[int(round/2)], 0x00, 0x00, 0x00]
+
+        else:
+            rcon = [rConTable[round], 0x00, 0x00, 0x00]
+
         col = []
-        for j in range(0,totalColumns):
+        for j in range(0,4):
             col.append(key[0][j] ^ rotword[j] ^ rcon[j])
 
+        print("end of xors")
+        for i in range(0,4):
+            print(hex(col[i]))
         #add column to new key and return
         newKey.append(col)
+
         return newKey
+
 
     # recursive case
     else:
         col = []
         #recursive case setting alteredKey equal to the returned value
         alteredKey= getKey(key, round, column - 1, totalColumns)
-        for h in range(0,totalColumns):
+        if column == 4:
+            sub = key[column]
+            for k in range(0, 4):
+                colIndex = sub[k] & 0x0F
+                rowIndex = sub[k] >> 4
+                sub[k] = Sbox[rowIndex][colIndex]
+
+
+        for h in range(0,4):
             col.append(key[column][h] ^ alteredKey[column - 1][h])
         alteredKey.append(col)
         return alteredKey
@@ -345,6 +371,7 @@ def encrypt(inputdata, key, keysize):
     parsedkey = []
     for b in range(0, int(keysize / 32)):
         parsedkey.append(key[b*4:b*4+4])
+        print(key[b*4:b*4+4])
 
     #pre-emptively calculate all round keys
     getRoundKeys(parsedkey, keysize)
@@ -359,6 +386,7 @@ def encrypt(inputdata, key, keysize):
         parsedchunk = []
         for a in range(0, 4):
             parsedchunk.append(chunk[a*4:a*4+4])
+
 
         #add round key to original key before entering rounds
         state = addRoundKey(parsedchunk, -1, parsedkey)
@@ -414,7 +442,7 @@ def encrypt(inputdata, key, keysize):
         #for b in range(0,8):
             #print(hex(result[a][b]))
 
-        '''
+
         if keysize == 256:
             # 14 rounds
             for i in range(0, 13):
@@ -428,8 +456,12 @@ def encrypt(inputdata, key, keysize):
             state = shiftRows(state)
             state = addRoundKey(state, 13, parsedkey)
 
-            #print(state)
-            '''
+            print("final state")
+            for a in range(0,4):
+                for b in range(0,4):
+                    #result.append(state[a][b])
+                    print(hex(state[a][b]))
+
 
     #print("result is")
     #for a in range(0, len(result)):
