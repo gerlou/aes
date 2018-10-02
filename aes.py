@@ -334,6 +334,8 @@ def getKey(key, round, column, totalColumns):
         print("column")
         print(column)
         for j in range(0, 4):
+            print("KEY")
+            print(hex(key[column][j]))
             col.append(key[0][j] ^ rotword[j] ^ rcon[j])
             print(hex(key[0][j] ^ rotword[j] ^ rcon[j]))
 
@@ -347,20 +349,28 @@ def getKey(key, round, column, totalColumns):
         col = []
         # recursive case setting alteredKey equal to the returned value
         alteredKey = getKey(key, round, column - 1, totalColumns)
+        temp = []
+        for g in range(0, 4):
+            temp.append(alteredKey[column - 1][g])
 
         if column == 4:
+
             for z in range(0,4):
-                colIndex = alteredKey[column - 1][z] & 0x0F
-                rowIndex = alteredKey[column - 1][z] >> 4
-                alteredKey[column - 1][z] = Sbox[rowIndex][colIndex]
+                colIndex = temp[z] & 0x0F
+                rowIndex = temp[z] >> 4
+                temp[z] = Sbox[rowIndex][colIndex]
 
         print("round")
         print(round)
         print("column")
         print(column)
         for h in range(0, 4):
-            col.append(key[column][h] ^ alteredKey[column - 1][h])
-            print(hex(key[column][h] ^ alteredKey[column - 1][h]))
+            print("KEY")
+            print(hex(key[column][h]))
+            print ("ALTERED KEY")
+            print(hex(temp[h]))
+            col.append(key[column][h] ^ temp[h])
+            print(hex(key[column][h] ^ temp[h]))
 
         alteredKey.append(col)
         return alteredKey
