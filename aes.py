@@ -329,15 +329,9 @@ def getKey(key, round, column, totalColumns):
             rcon = [rConTable[round], 0x00, 0x00, 0x00]
 
         col = []
-        print("round")
-        print(round)
-        print("column")
-        print(column)
+
         for j in range(0, 4):
-            print("KEY")
-            print(hex(key[column][j]))
             col.append(key[0][j] ^ rotword[j] ^ rcon[j])
-            print(hex(key[0][j] ^ rotword[j] ^ rcon[j]))
 
         # add column to new key and return
         newKey.append(col)
@@ -360,17 +354,9 @@ def getKey(key, round, column, totalColumns):
                 rowIndex = temp[z] >> 4
                 temp[z] = Sbox[rowIndex][colIndex]
 
-        print("round")
-        print(round)
-        print("column")
-        print(column)
         for h in range(0, 4):
-            print("KEY")
-            print(hex(key[column][h]))
-            print ("ALTERED KEY")
-            print(hex(temp[h]))
             col.append(key[column][h] ^ temp[h])
-            print(hex(key[column][h] ^ temp[h]))
+
 
         alteredKey.append(col)
         return alteredKey
@@ -381,11 +367,20 @@ def addRoundKey(state, round, parsedkey):
     result = []
     roundKey = []
 
+
     if round == -1:
         roundKey = parsedkey
+
+    if round > 5:
+        for j in range(4, 8):
+            key = []
+            for h in range(0, 4):
+                key.append(roundKeys[round - 7][j][h])
+            roundKey.append(key)
+
     else:
         roundKey = roundKeys[round]
-
+        
     for i in range(0, 4):
         col = []
         for j in range(0, 4):
