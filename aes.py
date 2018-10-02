@@ -367,20 +367,11 @@ def addRoundKey(state, round, parsedkey):
     result = []
     roundKey = []
 
-
     if round == -1:
         roundKey = parsedkey
-
-    if round > 5:
-        for j in range(4, 8):
-            key = []
-            for h in range(0, 4):
-                key.append(roundKeys[round - 7][j][h])
-            roundKey.append(key)
-
     else:
         roundKey = roundKeys[round]
-        
+
     for i in range(0, 4):
         col = []
         for j in range(0, 4):
