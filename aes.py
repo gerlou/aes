@@ -280,7 +280,6 @@ def getRoundKeys(key, keysize):
         roundKeys.append(
                 getKey(roundKeys[i], i + 1, totalColumns - 1, totalColumns))
 
-
     # if key size is 256, break keys into 14 rounds instead of 7
     if keysize == 256:
         secondHalfKeys = []
@@ -295,7 +294,7 @@ def getRoundKeys(key, keysize):
 
         for w in range(0, totalRounds):
             roundKeys.insert(2*w+1, secondHalfKeys[w])
-            
+
     return roundKeys
 
 
@@ -365,14 +364,13 @@ def getKey(key, round, column, totalColumns):
 
         if column == 4:
 
-            for z in range(0,4):
+            for z in range(0, 4):
                 colIndex = temp[z] & 0x0F
                 rowIndex = temp[z] >> 4
                 temp[z] = Sbox[rowIndex][colIndex]
 
         for h in range(0, 4):
             col.append(key[column][h] ^ temp[h])
-
 
         alteredKey.append(col)
         return alteredKey
