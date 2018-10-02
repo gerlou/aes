@@ -280,6 +280,18 @@ def getRoundKeys(key, keysize):
         roundKeys.append(
                 getKey(roundKeys[i], i + 1, totalColumns - 1, totalColumns))
 
+    # if key size is 256, break keys into 14 rounds instead of 7
+    if keysize == 256:
+
+        for j in range(0, totalRounds):
+            cutKey = []
+            for a in range(4, 8):
+                col = []
+                for b in range(0, 4):
+                    col.append(roundKeys[j][a][b])
+                cutKey.append(col)
+            roundKeys.append(cutKey)
+
     return roundKeys
 
 
